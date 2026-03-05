@@ -5,11 +5,15 @@ namespace SocialNetwork.Api.Services;
 
 public class UserRepository : IUserRepository
 {
-    private readonly NpgsqlDataSource _dataSource;
+    private readonly NpgsqlDataSource _master;
+    private readonly NpgsqlDataSource _slave;
 
-    public UserRepository(NpgsqlDataSource dataSource)
+    public UserRepository(
+        [FromKeyedServices("master")] NpgsqlDataSource master,
+        SlaveDataSourcePool slavePool)
     {
-        _dataSource = dataSource;
+        _master = master;
+        _slave = slavePool.GetNext();
     }
 
     public async Task<Guid> CreateAsync(RegisterRequest request, string passwordHash)
@@ -20,7 +24,7 @@ public class UserRepository : IUserRepository
             RETURNING id
             """;
 
-        await using var cmd = _dataSource.CreateCommand(sql);
+        await using var cmd = _master.CreateCommand(sql);
         cmd.Parameters.AddWithValue("firstName", request.FirstName);
         cmd.Parameters.AddWithValue("lastName", request.LastName);
         cmd.Parameters.AddWithValue("birthDate", (object?)request.BirthDate ?? DBNull.Value);
@@ -41,7 +45,7 @@ public class UserRepository : IUserRepository
             WHERE id = @id
             """;
 
-        await using var cmd = _dataSource.CreateCommand(sql);
+        await using var cmd = _slave.CreateCommand(sql);
         cmd.Parameters.AddWithValue("id", id);
 
         await using var reader = await cmd.ExecuteReaderAsync();
@@ -64,7 +68,7 @@ public class UserRepository : IUserRepository
     {
         const string sql = "SELECT password_hash FROM users WHERE id = @id";
 
-        await using var cmd = _dataSource.CreateCommand(sql);
+        await using var cmd = _slave.CreateCommand(sql);
         cmd.Parameters.AddWithValue("id", id);
 
         var result = await cmd.ExecuteScalarAsync();
@@ -80,7 +84,7 @@ public class UserRepository : IUserRepository
             ORDER BY id
             """;
 
-        await using var cmd = _dataSource.CreateCommand(sql);
+        await using var cmd = _slave.CreateCommand(sql);
         cmd.Parameters.AddWithValue("firstName", firstNamePrefix + "%");
         cmd.Parameters.AddWithValue("lastName", lastNamePrefix + "%");
 

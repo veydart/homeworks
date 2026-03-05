@@ -1,0 +1,57 @@
+services:
+  pg-master:
+    image: postgres:16
+    container_name: pg-master
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: social_network
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg-master-data:/var/lib/postgresql/data
+      - ./docker/master/init-master.sh:/docker-entrypoint-initdb.d/init-master.sh
+      - ./src/SocialNetwork.Api/Database/init.sql:/docker-entrypoint-initdb.d/20-init.sql
+      - ./src/SocialNetwork.Api/Database/seed.sql:/docker-entrypoint-initdb.d/30-seed.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  pg-slave-1:
+    image: postgres:16
+    container_name: pg-slave-1
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+    ports:
+      - "5433:5432"
+    depends_on:
+      pg-master:
+        condition: service_healthy
+    volumes:
+      - pg-slave1-data:/var/lib/postgresql/data
+      - ./docker/slave/start-slave1.sh:/start-slave.sh
+    entrypoint: ["bash", "/start-slave.sh"]
+
+  pg-slave-2:
+    image: postgres:16
+    container_name: pg-slave-2
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+    ports:
+      - "5434:5432"
+    depends_on:
+      pg-master:
+        condition: service_healthy
+    volumes:
+      - pg-slave2-data:/var/lib/postgresql/data
+      - ./docker/slave/start-slave2.sh:/start-slave.sh
+    entrypoint: ["bash", "/start-slave.sh"]
+
+volumes:
+  pg-master-data:
+  pg-slave1-data:
+  pg-slave2-data:

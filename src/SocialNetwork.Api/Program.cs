@@ -6,11 +6,29 @@ using SocialNetwork.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+var masterConn = builder.Configuration.GetConnectionString("Master")
     ?? "Host=localhost;Port=5432;Database=social_network;Username=postgres;Password=root";
 
-var dataSource = NpgsqlDataSource.Create(connectionString);
-builder.Services.AddSingleton(dataSource);
+var slave1Conn = builder.Configuration.GetConnectionString("Slave1") ?? "";
+var slave2Conn = builder.Configuration.GetConnectionString("Slave2") ?? "";
+
+var masterDataSource = NpgsqlDataSource.Create(masterConn);
+builder.Services.AddKeyedSingleton("master", masterDataSource);
+
+var slaveConnections = new List<string>();
+if (!string.IsNullOrEmpty(slave1Conn)) slaveConnections.Add(slave1Conn);
+if (!string.IsNullOrEmpty(slave2Conn)) slaveConnections.Add(slave2Conn);
+
+if (slaveConnections.Count > 0)
+{
+    var slaveSources = slaveConnections.Select(NpgsqlDataSource.Create).ToArray();
+    builder.Services.AddSingleton<SlaveDataSourcePool>(new SlaveDataSourcePool(slaveSources));
+}
+else
+{
+    builder.Services.AddSingleton<SlaveDataSourcePool>(new SlaveDataSourcePool([masterDataSource]));
+}
+
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddSingleton<PasswordHasher>();
 
@@ -36,7 +54,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 var app = builder.Build();
 
-await InitializeDatabase(dataSource, connectionString);
+await InitializeDatabase(masterDataSource, masterConn);
 
 app.UseSwagger();
 app.UseSwaggerUI();
