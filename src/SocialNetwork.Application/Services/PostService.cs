@@ -10,12 +10,18 @@ public class PostService
     private readonly IPostRepository _postRepo;
     private readonly IFriendRepository _friendRepo;
     private readonly IFeedCacheService _feedCache;
+    private readonly IPostEventPublisher _eventPublisher;
 
-    public PostService(IPostRepository postRepo, IFriendRepository friendRepo, IFeedCacheService feedCache)
+    public PostService(
+        IPostRepository postRepo,
+        IFriendRepository friendRepo,
+        IFeedCacheService feedCache,
+        IPostEventPublisher eventPublisher)
     {
         _postRepo = postRepo;
         _friendRepo = friendRepo;
         _feedCache = feedCache;
+        _eventPublisher = eventPublisher;
     }
 
     public async Task<Guid> CreateAsync(Guid authorId, CreatePostRequest request)
@@ -30,10 +36,9 @@ public class PostService
 
         var postId = await _postRepo.CreateAsync(post);
 
-        // Обновляем кеш лент всех подписчиков (друзей автора)
         var followerIds = await _friendRepo.GetFollowerIdsAsync(authorId);
         if (followerIds.Count > 0)
-            await _feedCache.AddToFeedsAsync(postId, followerIds);
+            await _eventPublisher.PublishPostCreatedAsync(postId, authorId, request.Text, followerIds);
 
         return postId;
     }
@@ -71,7 +76,6 @@ public class PostService
 
         await _postRepo.DeleteAsync(postId);
 
-        // Удаляем пост из кешей подписчиков
         var followerIds = await _friendRepo.GetFollowerIdsAsync(authorId);
         if (followerIds.Count > 0)
             await _feedCache.RemovePostFromFeedsAsync(postId, followerIds);
