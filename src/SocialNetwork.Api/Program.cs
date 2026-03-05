@@ -39,7 +39,7 @@ builder.Services.AddSingleton<WebSocketConnectionManager>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IPostRepository, PostRepository>();
 builder.Services.AddScoped<IFriendRepository, FriendRepository>();
-builder.Services.AddScoped<IDialogRepository, DialogRepository>();
+builder.Services.AddScoped<IDialogRepository, RedisDialogRepository>();
 
 // Сервисы
 builder.Services.AddScoped<IFeedCacheService, RedisFeedCacheService>();
