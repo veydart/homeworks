@@ -27,11 +27,13 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Conn
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IPostRepository, PostRepository>();
 builder.Services.AddScoped<IFriendRepository, FriendRepository>();
+builder.Services.AddScoped<IDialogRepository, DialogRepository>();
 
 // Сервисы
 builder.Services.AddScoped<IFeedCacheService, RedisFeedCacheService>();
 builder.Services.AddScoped<PostService>();
 builder.Services.AddScoped<FeedService>();
+builder.Services.AddScoped<DialogService>();
 
 // JWT
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "SuperSecretKeyForSocialNetwork2024!@#$";

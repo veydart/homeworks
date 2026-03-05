@@ -10,6 +10,7 @@ public class AppDbContext : DbContext
     public DbSet<User> Users => Set<User>();
     public DbSet<Post> Posts => Set<Post>();
     public DbSet<Friendship> Friendships => Set<Friendship>();
+    public DbSet<DialogMessage> DialogMessages => Set<DialogMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -36,6 +37,14 @@ public class AppDbContext : DbContext
             e.HasOne(f => f.User).WithMany(u => u.Friends).HasForeignKey(f => f.UserId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne(f => f.Friend).WithMany().HasForeignKey(f => f.FriendId).OnDelete(DeleteBehavior.Cascade);
             e.HasIndex(f => f.FriendId);
+        });
+
+        modelBuilder.Entity<DialogMessage>(e =>
+        {
+            e.HasKey(m => m.Id);
+            e.Property(m => m.DialogKey).HasMaxLength(73).IsRequired();
+            e.Property(m => m.Text).IsRequired();
+            e.HasIndex(m => new { m.DialogKey, m.CreatedAt });
         });
     }
 }
