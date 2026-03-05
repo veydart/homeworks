@@ -43,7 +43,7 @@ public class FeedConsumer : BackgroundService
 
                 await _channel.ExchangeDeclareAsync(
                     exchange: "post.feed",
-                    type: ExchangeType.Direct,
+                    type: ExchangeType.Topic,
                     durable: true,
                     cancellationToken: stoppingToken);
 

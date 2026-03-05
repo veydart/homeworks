@@ -31,3 +31,6 @@ artifacts/
 .vs/
 *.rsuser
 *.sln.iml
+
+# Node
+node_modules/

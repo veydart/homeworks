@@ -25,7 +25,7 @@ public class RabbitMqPublisher : IPostEventPublisher, IAsyncDisposable
 
         await channel.ExchangeDeclareAsync(
             exchange: ExchangeName,
-            type: ExchangeType.Direct,
+            type: ExchangeType.Topic,
             durable: true);
 
         return new RabbitMqPublisher(connection, channel);
