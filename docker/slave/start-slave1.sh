@@ -19,5 +19,7 @@ primary_conninfo = 'host=pg-master port=5432 user=replicator password=replicator
 primary_slot_name = 'slave_1_slot'
 EOF
 
-pg_ctl start -D /var/lib/postgresql/data -l /var/lib/postgresql/logfile
-tail -f /var/lib/postgresql/logfile
+chown -R postgres:postgres /var/lib/postgresql/data
+chmod 700 /var/lib/postgresql/data
+
+exec gosu postgres postgres -D /var/lib/postgresql/data
