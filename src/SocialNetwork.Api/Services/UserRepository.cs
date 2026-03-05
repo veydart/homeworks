@@ -70,4 +70,36 @@ public class UserRepository : IUserRepository
         var result = await cmd.ExecuteScalarAsync();
         return result as string;
     }
+
+    public async Task<List<User>> SearchAsync(string firstNamePrefix, string lastNamePrefix)
+    {
+        const string sql = """
+            SELECT id, first_name, last_name, birth_date, gender, interests, city
+            FROM users
+            WHERE first_name LIKE @firstName AND last_name LIKE @lastName
+            ORDER BY id
+            """;
+
+        await using var cmd = _dataSource.CreateCommand(sql);
+        cmd.Parameters.AddWithValue("firstName", firstNamePrefix + "%");
+        cmd.Parameters.AddWithValue("lastName", lastNamePrefix + "%");
+
+        var users = new List<User>();
+        await using var reader = await cmd.ExecuteReaderAsync();
+        while (await reader.ReadAsync())
+        {
+            users.Add(new User
+            {
+                Id = reader.GetGuid(0),
+                FirstName = reader.GetString(1),
+                LastName = reader.GetString(2),
+                BirthDate = reader.IsDBNull(3) ? null : DateOnly.FromDateTime(reader.GetDateTime(3)),
+                Gender = reader.IsDBNull(4) ? null : reader.GetString(4),
+                Interests = reader.IsDBNull(5) ? null : reader.GetString(5),
+                City = reader.IsDBNull(6) ? null : reader.GetString(6)
+            });
+        }
+
+        return users;
+    }
 }

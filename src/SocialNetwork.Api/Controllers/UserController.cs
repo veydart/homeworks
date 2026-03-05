@@ -40,4 +40,16 @@ public class UserController : ControllerBase
 
         return Ok(user);
     }
+
+    [HttpGet("/user/search")]
+    public async Task<ActionResult<List<User>>> Search(
+        [FromQuery(Name = "first_name")] string firstName,
+        [FromQuery(Name = "last_name")] string lastName)
+    {
+        if (string.IsNullOrWhiteSpace(firstName) || string.IsNullOrWhiteSpace(lastName))
+            return BadRequest("first_name and last_name are required.");
+
+        var users = await _userRepository.SearchAsync(firstName, lastName);
+        return Ok(users);
+    }
 }
